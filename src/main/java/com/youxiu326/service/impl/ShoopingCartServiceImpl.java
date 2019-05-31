@@ -108,4 +108,13 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
 
         return loginCart;
     }
+
+    public String addCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
+        String key = getKey(req, resp,account);
+        ShoppingCart cacheData = mergeCart(key,account);
+
+        return null;
+    }
+
+
 }
