@@ -56,7 +56,7 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
     }
 
     /**
-     * 合并购物车
+     * 合并购物车 返回最终购物车
      * @param tempKey
      */
     public ShoppingCart  mergeCart(String tempKey,Account account){
@@ -109,12 +109,95 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
         return loginCart;
     }
 
+    /**
+     * 添加购物车
+     * @param req
+     * @param resp
+     * @param account 登陆用户信息
+     * @param item  添加的购物车商品信息 包含商品code 商品加购数量
+     * @return
+     */
     public String addCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
         String key = getKey(req, resp,account);
-        ShoppingCart cacheData = mergeCart(key,account);
+        ShoppingCart cacheCart = mergeCart(key,account);
+        if(StringUtils.isNotBlank(item.getCode()) && item.getQuantity()>0){
+            //TODO 进行一系列 商品上架 商品code是否正确 最大购买数量....
+            if(false){
+                return null;
+            }
+            long count = 0;
+            if(null != cacheCart.getCartItems()) {
+                count = cacheCart.getCartItems().stream().filter(it->it.getCode().equals(item.getCode())).count();
+            }
+            if (count==0){
+                //之前购物车无该商品记录 则直接添加
+                cacheCart.getCartItems().add(item);
+            }else {
+                //否则将同一商品数量相加
+                CartItem c = cacheCart.getCartItems().stream().filter(it->it.getCode().equals(item.getCode())).findFirst().orElse(null);
+                c.setQuantity(c.getQuantity()+item.getQuantity());
 
+            }
+        }
+        //【将合并后的购物车数据 放入loginKey】
+        HashOperations<String,String,ShoppingCart> vos = redisTemplate.opsForHash();
+        vos.put("CACHE_SHOPPINGCART",key, cacheCart);
         return null;
     }
 
+    /**
+     * 移除购物车
+     * @param req
+     * @param resp
+     * @param account
+     * @param item
+     * @return
+     */
+    public String removeCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
+        String key = getKey(req, resp,account);
+        ShoppingCart cacheCart =  mergeCart(key , null);//TODO 待探讨
+        if(cacheCart!=null && cacheCart.getCartItems()!=null && cacheCart.getCartItems().size()>0){//⑴
+            //
+            long count = cacheCart.getCartItems().stream().filter(it->it.getCode().equals(item.getCode())).count();
+            if(count == 1 ){//⑵
+                CartItem ci = cacheCart.getCartItems().stream().filter(it->it.getCode().equals(item.getCode())).findFirst().orElse(null);
+                if (ci.getQuantity()>item.getQuantity()){//⑶
+                    ci.setQuantity(ci.getQuantity()-item.getQuantity());
+                }else if(ci.getQuantity()<=item.getQuantity()){
+                    cacheCart.getCartItems().remove(ci);
+                }
+                //1.满足缓存购物车中必须有商品才能减购物车
+                //2.满足缓存购物车中有该商品才能减购物车
+                //3.判断此次要减数量是否大于缓存购物车中数量 进行移除还是数量相减操作
+            }
+            HashOperations<String,String,ShoppingCart> vos = redisTemplate.opsForHash();
+            vos.put("CACHE_SHOPPINGCART",key, cacheCart);
+        }
+        return null;
+    }
+
+    /**
+     *  【场景:我加购了一双40码的鞋子到购物车 现在我想换成41码的鞋子】
+     *  【例如:原商品code ABCDEFG40   ->  ABCDEFG41】
+     *
+     * @param req
+     * @param resp
+     * @param account
+     * @param item 新购物商品
+     * @param oldItem 原购物商品
+     * @return
+     */
+    public String updateCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item,CartItem oldItem){
+
+        //TODO 校验商品信息是否合法 是否上架 库存 最大购买数量....
+        if(false){
+            return null;
+        }
+
+
+
+
+        return null;
+    }
 
 }
