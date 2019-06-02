@@ -1,6 +1,7 @@
 package com.youxiu326.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ShoppingCart implements Serializable {
@@ -11,7 +12,7 @@ public class ShoppingCart implements Serializable {
 
     private String key="";
 
-    private List<CartItem> cartItems;
+    private List<CartItem> cartItems = new ArrayList<>();//防止空指针
 
     public ShoppingCart(){}
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <base th:href="${#httpServletRequest.getContextPath()+'/'}">
+    <meta charset="UTF-8">
+    <title>测试未登陆基于redis实现购物车功能</title>
+</head>
+<body>
+<h2>商品列表</h2>
+
+<table>
+    <tr>
+        <td>商品编号</td>
+        <td>商品数量</td>
+    </tr>
+    <tr  th:each="cart,iterStat : ${cartItems}">
+        <th scope="row" th:text="${cart.code}">1</th>
+        <td th:text="${cart.quantity}">quantity</td>
+    <!--    <td >-->
+    <!--        <img th:src="${cart.webLogo}"/>-->
+    <!--    </td>-->
+    <!--    <td th:text="${iterStat.index}">index</td>-->
+    </tr>
+</table>
+
+
+
+<br/>
+
+
+<form action="#" method="post">
+    <table>
+        <tr>
+            <td>商品编号：</td>
+            <td><input type="text" id="code" name="code" value="youxiu001"></td>
+        </tr>
+        <tr>
+            <td>数量：</td>
+            <td><input id="quantity" name="quantity" value="1"></td>
+        </tr>
+        <tr>
+            <td colspan="1"><button type="button" onclick="add()">加购</button></td>
+            <td colspan="1"><button type="button" onclick="remove()">减购</button></td>
+        </tr>
+    </table>
+</form>
+
+</body>
+
+<script src="/jquery-1.11.3.min.js"></script>
+<!--<script th:src="@{/jquery-1.11.3.min.js}"></script>-->
+<script>
+    function add(){
+        $.ajax({
+            type: 'POST',
+            url: "/shopping/add",
+            data: {"code":$("#code").val(),"quantity":$("#quantity").val()},
+            // dataType: "json",
+            success: function(response){
+                if(response.code=="200"){
+                    window.location.reload();
+                }else{
+                    alert(response.message);
+                }
+            },
+            error:function(response){
+                alert(response.message);
+                console.log(response);
+            }
+        });
+    }
+
+     function remove(){
+        $.ajax({
+            type: 'POST',
+            url: "/shopping/remove",
+            data: {"code":$("#code").val(),"quantity":$("#quantity").val()},
+            // dataType: "json",
+            success: function(response){
+                if(response.code=="200"){
+                    window.location.reload();
+                }else{
+                    alert(response.message);
+                }
+            },
+            error:function(response){
+                alert("失败");
+                console.log(response);
+            }
+        });
+    }
+
+</script>
+
+
+</html>

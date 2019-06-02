@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <base th:href="${#httpServletRequest.getContextPath()+'/'}">
+    <meta charset="UTF-8">
+    <title>登陆界面</title>
+</head>
+<body>
+
+<div th:if="${session.account == null}">[未登陆]</div>
+<div th:if="${session.account != null}">
+    <div th:text="${session.account.code}"></div>
+</div>
+
+<form action="#" method="post">
+    <table>
+        <tr>
+            <td>用户：</td>
+            <td><input type="text" id="code" name="code" value="test"></td>
+        </tr>
+        <tr>
+            <td>密码：</td>
+            <td><input id="pwd" name="pwd" value="youxiu326"></td>
+        </tr>
+        <tr>
+            <td colspan="1"><button type="button" onclick="login()">登陆</button></td>
+            <td colspan="1"><button type="button" onclick="logout()">登出</button></td>
+        </tr>
+    </table>
+</form>
+
+<br/>
+
+<a target="_blank" href="/shopping/index">去购物车页面</a>
+
+
+</body>
+
+<script src="/jquery-1.11.3.min.js"></script>
+<!--<script th:src="@{/jquery-1.11.3.min.js}"></script>-->
+<script>
+    function login(){
+        $.ajax({
+            type: 'POST',
+            url: "/login",
+            data: {"code":$("#code").val(),"pwd":$("#pwd").val()},
+            // dataType: "json",
+            success: function(response){
+                if(response.code=="200"){
+                    alert(response.message);
+                    window.location.reload();
+                }else{
+                    alert(response.message);
+                }
+            },
+            error:function(response){
+                alert(response.message);
+                console.log(response);
+            }
+        });
+    }
+
+     function logout(){
+        $.ajax({
+            type: 'POST',
+            url: "/logout",
+            data: {"code":$("#code").val()},
+            // dataType: "json",
+            success: function(response){
+                if(response.code=="200"){
+                    alert(response.message);
+                    window.location.reload();
+                }else{
+                    alert(response.message);
+                }
+            },
+            error:function(response){
+                alert("失败");
+                console.log(response);
+            }
+        });
+    }
+
+</script>
+
+
+</html>

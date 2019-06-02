@@ -1,14 +1,14 @@
 package com.youxiu326.service.impl;
 
+import com.youxiu326.common.JsonResult;
 import com.youxiu326.entity.Account;
 import com.youxiu326.entity.CartItem;
 import com.youxiu326.entity.ShoppingCart;
-import com.youxiu326.service.ShoopingCartService;
+import com.youxiu326.service.ShoppingCartService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.WebUtils;
 import javax.servlet.http.Cookie;
@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.UUID;
 
 @Service
-public class ShoopingCartServiceImpl implements ShoopingCartService {
+public class ShoppingCartServiceImpl implements ShoppingCartService {
 
     @Autowired
     private RedisTemplate redisTemplate;
@@ -59,17 +59,17 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
      * 合并购物车 返回最终购物车
      * @param tempKey
      */
-    public ShoppingCart  mergeCart(String tempKey,Account account){
+    public ShoppingCart  mergeCart(String tempKey,Account account) {
 
         ShoppingCart loginCart = null;
         String loginkey = null;
 
         // 从redis取出用户缓存购物车数据
-        HashOperations<String,String,ShoppingCart> vos = redisTemplate.opsForHash();
+        HashOperations<String, String, ShoppingCart> vos = redisTemplate.opsForHash();
         ShoppingCart unLoginCart = vos.get("CACHE_SHOPPINGCART", tempKey);
-        if (unLoginCart==null)
+        if (unLoginCart == null){
             unLoginCart = new ShoppingCart(tempKey);
-
+        }
         if (account != null && tempKey.startsWith(ShoppingCart.unLoginKeyPrefix)) {//⑵
             //如果用户登录 并且 当前是未登录的key
             loginkey = ShoppingCart.loginKeyPrefix + account.getId();
@@ -92,8 +92,11 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
                     //如果当前登录用户的购物车为空则 将未登录时的购物车合并
                     loginCart.setCartItems(unLoginCart.getCartItems());
                 }
+                unLoginCart = loginCart;
                 //【删除临时key】
                 vos.delete("CACHE_SHOPPINGCART",tempKey);
+                //【将合并后的购物车数据 放入loginKey】//TMP_4369f86d-c026-4b1b-8fec-f3c69f6ffac5
+                vos.put("CACHE_SHOPPINGCART",loginkey, unLoginCart);
             }
         }else if(account!=null
                 && tempKey.startsWith(ShoppingCart.loginKeyPrefix)
@@ -101,12 +104,12 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
             //判断是否当前用户的缓存
             loginkey = ShoppingCart.loginKeyPrefix+account.getId();
             loginCart = mergeCart(loginkey,account);
+            unLoginCart = loginCart;
+            //【将合并后的购物车数据 放入loginKey】//TMP_4369f86d-c026-4b1b-8fec-f3c69f6ffac5
+            vos.put("CACHE_SHOPPINGCART",loginkey, unLoginCart);
         }
 
-        //【将合并后的购物车数据 放入loginKey】
-        vos.put("CACHE_SHOPPINGCART",loginkey, loginCart);
-
-        return loginCart;
+        return unLoginCart;
     }
 
     /**
@@ -117,13 +120,14 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
      * @param item  添加的购物车商品信息 包含商品code 商品加购数量
      * @return
      */
-    public String addCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
+    public JsonResult addCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
+        JsonResult result = new JsonResult();
         String key = getKey(req, resp,account);
         ShoppingCart cacheCart = mergeCart(key,account);
         if(StringUtils.isNotBlank(item.getCode()) && item.getQuantity()>0){
             //TODO 进行一系列 商品上架 商品code是否正确 最大购买数量....
             if(false){
-                return null;
+                return result.error();
             }
             long count = 0;
             if(null != cacheCart.getCartItems()) {
@@ -142,7 +146,8 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
         //【将合并后的购物车数据 放入loginKey】
         HashOperations<String,String,ShoppingCart> vos = redisTemplate.opsForHash();
         vos.put("CACHE_SHOPPINGCART",key, cacheCart);
-        return null;
+        result.setData(cacheCart);
+        return result;
     }
 
     /**
@@ -153,9 +158,10 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
      * @param item
      * @return
      */
-    public String removeCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
+    public JsonResult removeCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
+        JsonResult result = new JsonResult();
         String key = getKey(req, resp,account);
-        ShoppingCart cacheCart =  mergeCart(key , null);//TODO 待探讨
+        ShoppingCart cacheCart =  mergeCart(key , account);//TODO 待探讨
         if(cacheCart!=null && cacheCart.getCartItems()!=null && cacheCart.getCartItems().size()>0){//⑴
             //
             long count = cacheCart.getCartItems().stream().filter(it->it.getCode().equals(item.getCode())).count();
@@ -173,7 +179,8 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
             HashOperations<String,String,ShoppingCart> vos = redisTemplate.opsForHash();
             vos.put("CACHE_SHOPPINGCART",key, cacheCart);
         }
-        return null;
+        result.setData(cacheCart);
+        return result;
     }
 
     /**
@@ -194,9 +201,13 @@ public class ShoopingCartServiceImpl implements ShoopingCartService {
             return null;
         }
 
-
-
-
+        String key = getKey(req, resp,account);
+        ShoppingCart cacheCart =  mergeCart(key , account);//TODO 待探讨
+        cacheCart.getCartItems().remove(item);
+        cacheCart.getCartItems().remove(oldItem);
+        cacheCart.getCartItems().add(oldItem);
+        HashOperations<String,String,ShoppingCart> vos = redisTemplate.opsForHash();
+        vos.put("CACHE_SHOPPINGCART",key, cacheCart);
         return null;
     }
 
