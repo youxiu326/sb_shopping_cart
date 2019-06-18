@@ -112,16 +112,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 //【将合并后的购物车数据 放入loginKey】//TMP_4369f86d-c026-4b1b-8fec-f3c69f6ffac5
                 vos.put("CACHE_SHOPPINGCART",loginkey, unLoginCart);
             }
-        }/*else if(account!=null
-                && tempKey.startsWith(ShoppingCart.loginKeyPrefix)
-                && !(ShoppingCart.loginKeyPrefix+account.getId()).equals(tempKey)){
-            //判断是否当前用户的缓存
-            loginkey = ShoppingCart.loginKeyPrefix+account.getId();
-            loginCart = mergeCart(loginkey,account);
-            unLoginCart = loginCart;
-            //【将合并后的购物车数据 放入loginKey】//TMP_4369f86d-c026-4b1b-8fec-f3c69f6ffac5
-            vos.put("CACHE_SHOPPINGCART",loginkey, unLoginCart);
-        }*/
+        }
 
         return unLoginCart;
     }
