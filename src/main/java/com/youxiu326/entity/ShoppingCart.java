@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 购物车对象 一个购物车由n个CartItem组成
+ */
 public class ShoppingCart implements Serializable {
 
     public static final String unLoginKeyPrefix="TMP_";

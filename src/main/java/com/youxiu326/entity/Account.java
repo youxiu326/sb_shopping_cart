@@ -2,6 +2,9 @@ package com.youxiu326.entity;
 
 import java.io.Serializable;
 
+/**
+ * 用户
+ */
 public class Account implements Serializable {
 
     private String id = "youxiu326";

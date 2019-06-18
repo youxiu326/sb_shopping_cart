@@ -4,6 +4,9 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * 购物实体
+ */
 public class CartItem implements Serializable {
 
     private String code;
