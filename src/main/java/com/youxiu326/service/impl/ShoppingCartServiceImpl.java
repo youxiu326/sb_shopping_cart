@@ -112,7 +112,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 //【将合并后的购物车数据 放入loginKey】//TMP_4369f86d-c026-4b1b-8fec-f3c69f6ffac5
                 vos.put("CACHE_SHOPPINGCART",loginkey, unLoginCart);
             }
-        }else if(account!=null
+        }/*else if(account!=null
                 && tempKey.startsWith(ShoppingCart.loginKeyPrefix)
                 && !(ShoppingCart.loginKeyPrefix+account.getId()).equals(tempKey)){
             //判断是否当前用户的缓存
@@ -121,7 +121,7 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
             unLoginCart = loginCart;
             //【将合并后的购物车数据 放入loginKey】//TMP_4369f86d-c026-4b1b-8fec-f3c69f6ffac5
             vos.put("CACHE_SHOPPINGCART",loginkey, unLoginCart);
-        }
+        }*/
 
         return unLoginCart;
     }
@@ -136,8 +136,8 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      */
     public JsonResult addCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
         JsonResult result = new JsonResult();
-        String key = getKey(req, resp,account);
-        ShoppingCart cacheCart = mergeCart(key,account);
+        String key = getKey(req, resp,account);//得到最终key
+        ShoppingCart cacheCart = mergeCart(key,account);//根据key取得最终购物车对象
         if(StringUtils.isNotBlank(item.getCode()) && item.getQuantity()>0){
             //TODO 进行一系列 商品上架 商品code是否正确 最大购买数量....
             if(false){
@@ -174,8 +174,8 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      */
     public JsonResult removeCart(HttpServletRequest req, HttpServletResponse resp,Account account,CartItem item){
         JsonResult result = new JsonResult();
-        String key = getKey(req, resp,account);
-        ShoppingCart cacheCart =  mergeCart(key , account);//TODO 待探讨
+        String key = getKey(req, resp,account);//得到最终key
+        ShoppingCart cacheCart =  mergeCart(key , account);//根据key取得最终购物车对象
         if(cacheCart!=null && cacheCart.getCartItems()!=null && cacheCart.getCartItems().size()>0){//⑴
             //
             long count = cacheCart.getCartItems().stream().filter(it->it.getCode().equals(item.getCode())).count();
